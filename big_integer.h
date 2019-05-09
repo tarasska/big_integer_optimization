@@ -5,8 +5,8 @@
 #ifndef BIG_INTEGER_HW__BIG_INTEGER_H_
 #define BIG_INTEGER_HW__BIG_INTEGER_H_
 
-#include <vector>
-#include <cstddef>
+
+
 #include <iosfwd>
 #include <cstdint>
 #include <functional>
@@ -39,7 +39,7 @@ struct big_integer {
   big_integer operator+() const;
   big_integer operator-() const;
   big_integer operator~() const;
-//
+
 //    big_integer& operator++();
 //    big_integer operator++(int);
 //
@@ -54,6 +54,7 @@ struct big_integer {
   friend bool operator>=(big_integer const& a, big_integer const& b);
 
   friend std::string to_string(big_integer const& a);
+
 
  private:
   my_vector digits;

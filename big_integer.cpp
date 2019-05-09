@@ -19,9 +19,9 @@ big_integer::big_integer() {
     digits.push_back(0);
 }
 
-big_integer::big_integer(big_integer const& other) {
-    sign = other.sign;
-    digits = other.digits;
+big_integer::big_integer(big_integer const& other) : sign(other.sign),  digits(other.digits){
+//    sign = other.sign;
+//    digits = other.digits;
 }
 
 big_integer::big_integer(int x) {
@@ -73,7 +73,6 @@ void big_integer::shrink_to_fit() {
 int big_integer::sub_prefix(big_integer const& b, size_t first_ind) {
     digit_type carry = 0;
     digit_type* ptr_digits = this->digits.get_unique_ptr();
-    //digit_type const* b_digits = b.digits.get_const_ptr();
     for (size_t i = 0; i < b.digits.size(); ++i) {
         if (ptr_digits[first_ind + i]  >= uint64_t(carry) + b.digits[i]) {
             ptr_digits[first_ind + i] = static_cast<uint32_t>(ptr_digits[first_ind + i] - carry - b.digits[i]);
@@ -91,19 +90,20 @@ int big_integer::sub_prefix(big_integer const& b, size_t first_ind) {
             ptr_digits[b.digits.size() + first_ind] = base - 1;
         }
     }
+    digits.set_size(b.digits.size() + first_ind + 1);
     return carry;
 }
 
 void big_integer::add_prefix(big_integer const& b, size_t first_ind) {
     uint64_t carry = 0;
     digit_type* ptr_digits = this->digits.get_unique_ptr();
-    //digit_type const* b_digits = b.digits.get_const_ptr();
     for (size_t i = 0; i < b.digits.size(); ++i) {
         uint64_t new_digit = carry + ptr_digits[first_ind + i] + b.digits[i];
         ptr_digits[first_ind + i] = digit_type(new_digit % base);
         carry = new_digit >= base ? 1 : 0;
     }
     ptr_digits[first_ind + b.digits.size()] += carry;
+    digits.set_size(b.digits.size() + first_ind + 1);
 }
 
 big_integer big_integer::mul_by_short_with_shift(big_integer const& a, digit_type d, size_t shift) {
@@ -117,6 +117,7 @@ big_integer big_integer::mul_by_short_with_shift(big_integer const& a, digit_typ
         ptr_buf[i + shift] = digit_type(mul % base);
         carry = digit_type(mul / base);
     }
+    buf.set_size(a.digits.size() + shift);
     if (carry != 0) {
         buf.push_back(carry);
     }
@@ -136,6 +137,7 @@ std::pair<big_integer, big_integer::digit_type> big_integer::div_by_short(big_in
         ptr_result[j] = digit_type(tmp / b);
         r = digit_type(tmp % b);
     }
+    result.set_size(a.digits.size());
     big_integer quotient(result, a.sign);
     quotient.shrink_to_fit();
     return {quotient, r};
@@ -179,6 +181,7 @@ big_integer big_integer::make_binary_operation(big_integer const& a,
     for (size_t i = small_bin.digits.size(); i < big_bin.digits.size(); ++i) {
         ptr_buf[i] = f(lead_block, big_bin.digits[i]);
     }
+    buf.set_size(big_bin.digits.size());
     big_integer result(buf, get_sign(a.sign, b.sign));
     result.shrink_to_fit();
     return result.get_sign_code();
@@ -190,6 +193,7 @@ big_integer big_integer::get_reverse_code_with_add() const {
     for (size_t i = 0; i < result.size(); ++i) {
         ptr_result[i] = ~digits[i];
     }
+    result.set_size(digits.size());
     return big_integer(result, 1) + 1;
 }
 
@@ -319,6 +323,7 @@ big_integer big_integer::operator~() const {
     for (size_t i = 0; i < result.digits.size(); ++i) {
         ptr_result[i] = ~ptr_result[i];
     }
+    result.digits.set_size(result.digits.size());
     result.sign = -sign;
     result = result.get_sign_code();
     result.shrink_to_fit();
@@ -389,6 +394,7 @@ big_integer& big_integer::operator>>=(int rhs) {
     for (size_t i = 0; i < pop_cnt; i++) {
         ptr_result[it++] = a_bin.digits.back();
     }
+    result.set_size(it);
     *this = big_integer(result, sign).get_sign_code();
     this->shrink_to_fit();
     return *this;
@@ -443,6 +449,7 @@ big_integer& big_integer::operator+=(big_integer const& rhs) {
         ptr_buf[i] = digit_type(sum % base);
         carry = sum >= base ? 1 : 0;
     }
+    buf.set_size(big_size);
     if (carry != 0) {
         buf.push_back(carry);
     }
@@ -499,6 +506,7 @@ big_integer& big_integer::operator-=(big_integer const& rhs) {
             ptr_buf[i] = big_digit;
         }
     }
+    buf.set_size(big->digits.size());
     *this = big_integer(buf, res_sign);
     this->shrink_to_fit();
     return *this;
@@ -509,7 +517,8 @@ big_integer& big_integer::operator*=(big_integer const& rhs) {
     big_integer const& big = digits.size() < rhs.digits.size() ? rhs : *this;
     big_integer ans;
     for (size_t i = 0; i < small.digits.size(); i++) {
-        ans += mul_by_short_with_shift(big, small.digits[i], i);
+        big_integer buf = mul_by_short_with_shift(big, small.digits[i], i);
+        ans += buf;
     }
     ans.sign = sign * rhs.sign;
     ans.shrink_to_fit();
@@ -555,6 +564,7 @@ std::pair<big_integer, big_integer> big_integer::division(big_integer const& a, 
         }
         ptr_quotient[j] = digit_type(q);
     }
+    quotient.set_size(m + 1);
     big_integer res_q(quotient, a.sign * b.sign);
     res_q.shrink_to_fit();
     my_vector buf(n);
@@ -562,6 +572,7 @@ std::pair<big_integer, big_integer> big_integer::division(big_integer const& a, 
     for (size_t i = 0; i < n; ++i) {
         ptr_buf[i] = dividend.digits[i];
     }
+    buf.set_size(n);
     big_integer res_mod
         (div_by_short(big_integer(buf, a.sign), d).first);
     res_mod.sign = a.sign;

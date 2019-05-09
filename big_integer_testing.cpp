@@ -9,9 +9,6 @@
 
 TEST(correctness, two_plus_two) {
     EXPECT_EQ(big_integer(2) + big_integer(2), big_integer(4));
-    if (big_integer(2) + big_integer(2) == big_integer(4)) {
-
-    }
     EXPECT_EQ(big_integer(2) + 2, 4); // implicit converion from int must work
     EXPECT_EQ(2 + big_integer(2), 4);
 }
@@ -413,7 +410,6 @@ TEST(correctness, add_long) {
     big_integer a("10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     big_integer b("100000000000000000000000000000000000000");
     big_integer c("10000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000");
-
     EXPECT_EQ(a + b, c);
 }
 
@@ -611,7 +607,6 @@ void merge_two(std::vector<T>& v) {
     T b = extract_random_element(v);
 
     T ab = a * b;
-
     ASSERT_TRUE(ab / a == b);
     ASSERT_TRUE(ab / b == a);
 
