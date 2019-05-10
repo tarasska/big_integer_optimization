@@ -133,7 +133,7 @@ std::pair<big_integer, big_integer::digit_type> big_integer::div_by_short(big_in
     my_vector result(a.digits.size());
     digit_type* ptr_result = result.get_unique_ptr();
     digit_type const* ptr_a = a.digits.get_ptr();
-    for (ptrdiff_t j = a.digits.size() - 1; j >= 0; --j) {
+    for (size_t j = a.digits.size(); j-- > 0;) {
         uint64_t tmp = base * r + ptr_a[j];
         ptr_result[j] = digit_type(tmp / b);
         r = digit_type(tmp % b);
@@ -259,7 +259,7 @@ bool operator!=(big_integer const& a, big_integer const& b) {
 
 bool operator<(big_integer const& a, big_integer const& b) {
     if (a.sign == b.sign && a.digits.size() == b.digits.size()) {
-        for (ptrdiff_t it = a.digits.size() - 1; it >= 0; --it) {
+        for (size_t it = a.digits.size(); it-- > 0;) {
             if (a.digits[it] != b.digits[it]) return a.digits[it] < b.digits[it] && a.sign >= 0;
         }
     } else {
@@ -276,7 +276,7 @@ bool operator<(big_integer const& a, big_integer const& b) {
 
 bool operator>(big_integer const& a, big_integer const& b) {
     if (a.sign == b.sign && a.digits.size() == a.digits.size()) {
-        for (ptrdiff_t it = a.digits.size() - 1; it >= 0; --it) {
+        for (size_t it = a.digits.size(); it-- > 0;) {
             if (a.digits[it] != b.digits[it]) return a.digits[it] > b.digits[it] && a.sign >= 0;
         }
     } else {
