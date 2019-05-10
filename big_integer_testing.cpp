@@ -656,6 +656,7 @@ TEST(correctness, div_randomized) {
         big_integer divisor = rand_big(6);
         big_integer quotient = divident / divisor;
         big_integer residue = divident % divisor;
+
         ASSERT_EQ(divident - quotient * divisor, residue);
         EXPECT_GE(residue, 0);
         EXPECT_LT(residue, divisor);

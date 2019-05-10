@@ -148,6 +148,10 @@ void my_vector::set_size(size_t new_size) {
     _size = new_size;
 }
 
+my_vector::elem_type const* my_vector::get_ptr() const {
+    return _data;
+}
+
 
 
 

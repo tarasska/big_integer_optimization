@@ -19,7 +19,7 @@ big_integer::big_integer() {
     digits.push_back(0);
 }
 
-big_integer::big_integer(big_integer const& other) : sign(other.sign), digits(other.digits) {}
+big_integer::big_integer(big_integer const& other) noexcept : sign(other.sign), digits(other.digits) {}
 
 big_integer::big_integer(int x) {
     if (x == 0) {
@@ -70,12 +70,13 @@ void big_integer::shrink_to_fit() {
 int big_integer::sub_prefix(big_integer const& b, size_t first_ind) {
     digit_type carry = 0;
     digit_type* ptr_digits = this->digits.get_unique_ptr();
+    digit_type const* ptr_b = b.digits.get_ptr();
     for (size_t i = 0; i < b.digits.size(); ++i) {
-        if (ptr_digits[first_ind + i]  >= uint64_t(carry) + b.digits[i]) {
-            ptr_digits[first_ind + i] = static_cast<uint32_t>(ptr_digits[first_ind + i] - carry - b.digits[i]);
+        if (ptr_digits[first_ind + i]  >= uint64_t(carry) + ptr_b[i]) {
+            ptr_digits[first_ind + i] = static_cast<uint32_t>(ptr_digits[first_ind + i] - carry - ptr_b[i]);
             carry = 0;
         } else {
-            ptr_digits[first_ind + i] += base - carry - uint64_t(b.digits[i]);
+            ptr_digits[first_ind + i] += base - carry - uint64_t(ptr_b[i]);
             carry = 1;
         }
     }
@@ -94,8 +95,9 @@ int big_integer::sub_prefix(big_integer const& b, size_t first_ind) {
 void big_integer::add_prefix(big_integer const& b, size_t first_ind) {
     uint64_t carry = 0;
     digit_type* ptr_digits = this->digits.get_unique_ptr();
+    digit_type const* ptr_b = b.digits.get_ptr();
     for (size_t i = 0; i < b.digits.size(); ++i) {
-        uint64_t new_digit = carry + ptr_digits[first_ind + i] + b.digits[i];
+        uint64_t new_digit = carry + ptr_digits[first_ind + i] + ptr_b[i];
         ptr_digits[first_ind + i] = digit_type(new_digit % base);
         carry = new_digit >= base ? 1 : 0;
     }
@@ -109,8 +111,9 @@ big_integer big_integer::mul_by_short_with_shift(big_integer const& a, digit_typ
     my_vector buf(a.digits.size() + shift + 1);
     digit_type carry = 0;
     digit_type* ptr_buf = buf.get_unique_ptr();
+    digit_type const* ptr_a = a.digits.get_ptr();
     for (size_t i = 0; i < a.digits.size(); ++i) {
-        uint64_t mul = uint64_t(a.digits[i]) * d + carry;
+        uint64_t mul = uint64_t(ptr_a[i]) * d + carry;
         ptr_buf[i + shift] = digit_type(mul % base);
         carry = digit_type(mul / base);
     }
@@ -129,8 +132,9 @@ std::pair<big_integer, big_integer::digit_type> big_integer::div_by_short(big_in
     digit_type r = 0;
     my_vector result(a.digits.size());
     digit_type* ptr_result = result.get_unique_ptr();
+    digit_type const* ptr_a = a.digits.get_ptr();
     for (ptrdiff_t j = a.digits.size() - 1; j >= 0; --j) {
-        uint64_t tmp = base * r + a.digits[j];
+        uint64_t tmp = base * r + ptr_a[j];
         ptr_result[j] = digit_type(tmp / b);
         r = digit_type(tmp % b);
     }
@@ -147,10 +151,12 @@ int big_integer::modulo_compare_to(big_integer const& a, big_integer const& b) {
     if (a.digits.size() < b.digits.size()) {
         return -1;
     }
-    for (ptrdiff_t i = a.digits.size() - 1; i >= 0; --i) {
-        if (a.digits[i] > b.digits[i]) {
+    digit_type const* ptr_a = a.digits.get_ptr();
+    digit_type const* ptr_b = b.digits.get_ptr();
+    for (size_t i = a.digits.size(); i-- > 0;) {
+        if (ptr_a[i] > ptr_b[i]) {
             return 1;
-        } else if (b.digits[i] > a.digits[i]) {
+        } else if (ptr_b[i] > ptr_a[i]) {
             return -1;
         }
     }
@@ -171,12 +177,14 @@ big_integer big_integer::make_binary_operation(big_integer const& a,
     }
     my_vector buf(big_bin.digits.size());
     digit_type* ptr_buf = buf.get_unique_ptr();
+    digit_type const* ptr_big = big_bin.digits.get_ptr();
+    digit_type const* ptr_small = small_bin.digits.get_ptr();
     for (size_t i = 0; i < small_bin.digits.size(); ++i) {
-        ptr_buf[i] = f(small_bin.digits[i], big_bin.digits[i]);
+        ptr_buf[i] = f(ptr_small[i], ptr_big[i]);
     }
     digit_type lead_block = small_bin.sign >= 0 ? 0 : max_digit;
     for (size_t i = small_bin.digits.size(); i < big_bin.digits.size(); ++i) {
-        ptr_buf[i] = f(lead_block, big_bin.digits[i]);
+        ptr_buf[i] = f(lead_block, ptr_big[i]);
     }
     buf.set_size(big_bin.digits.size());
     big_integer result(buf, get_sign(a.sign, b.sign));
@@ -187,8 +195,9 @@ big_integer big_integer::make_binary_operation(big_integer const& a,
 big_integer big_integer::get_reverse_code_with_add() const {
     my_vector result(digits.size());
     digit_type* ptr_result = result.get_unique_ptr();
+    digit_type const* ptr_this = digits.get_ptr();
     for (size_t i = 0; i < result.size(); ++i) {
-        ptr_result[i] = ~digits[i];
+        ptr_result[i] = ~ptr_this[i];
     }
     result.set_size(digits.size());
     return big_integer(result, 1) + 1;
@@ -249,7 +258,7 @@ bool operator!=(big_integer const& a, big_integer const& b) {
 }
 
 bool operator<(big_integer const& a, big_integer const& b) {
-    if (a.sign == b.sign && a.digits.size() == a.digits.size()) {
+    if (a.sign == b.sign && a.digits.size() == b.digits.size()) {
         for (ptrdiff_t it = a.digits.size() - 1; it >= 0; --it) {
             if (a.digits[it] != b.digits[it]) return a.digits[it] < b.digits[it] && a.sign >= 0;
         }
@@ -435,15 +444,18 @@ big_integer& big_integer::operator+=(big_integer const& rhs) {
     my_vector buf(big_size);
     digit_type* ptr_buf = buf.get_unique_ptr();
     digit_type carry = 0;
-    my_vector const &this_digits = digits;
+    digit_type const* ptr_this = digits.get_ptr();
+    digit_type const* ptr_rhs = rhs.digits.get_ptr();
+
     for (size_t i = 0; i < small_size; ++i) {
-        uint64_t sum = uint64_t(this_digits[i]) + rhs.digits[i] + carry;
+        uint64_t sum = uint64_t(ptr_this[i]) + ptr_rhs[i] + carry;
         ptr_buf[i] = digit_type(sum % base);
         carry = sum >= base ? 1 : 0;
     }
-    big_integer const& c = (big_size == digits.size()) ? *this : rhs;
+    digit_type const* ptr_c = (big_size == digits.size()) ? ptr_this : ptr_rhs;
+
     for (size_t i = small_size; i < big_size; ++i) {
-        uint64_t sum = uint64_t(c.digits[i]) + carry;
+        uint64_t sum = uint64_t(ptr_c[i]) + carry;
         ptr_buf[i] = digit_type(sum % base);
         carry = sum >= base ? 1 : 0;
     }
@@ -481,25 +493,28 @@ big_integer& big_integer::operator-=(big_integer const& rhs) {
     my_vector buf(big->digits.size());
     digit_type* ptr_buf = buf.get_unique_ptr();
     digit_type carry = 0;
+    digit_type const* ptr_big = big->digits.get_ptr();
+    digit_type const* ptr_small = small->digits.get_ptr();
+
     for (size_t i = 0; i < small->digits.size(); ++i) {
-        if (carry != 0 && big->digits[i] == 0) {
-            ptr_buf[i] = max_digit - small->digits[i];
+        if (carry != 0 && ptr_big[i] == 0) {
+            ptr_buf[i] = max_digit - ptr_small[i];
         } else {
-            digit_type big_digit = big->digits[i] - carry;
-            if (big_digit < small->digits[i]) {
+            digit_type big_digit = ptr_big[i] - carry;
+            if (big_digit < ptr_small[i]) {
                 carry = 1;
-                ptr_buf[i] = digit_type((base - small->digits[i]) + big_digit);
+                ptr_buf[i] = digit_type((base - ptr_small[i]) + big_digit);
             } else {
                 carry = 0;
-                ptr_buf[i] = big_digit - small->digits[i];
+                ptr_buf[i] = big_digit - ptr_small[i];
             }
         }
     }
     for (size_t i = small->digits.size(); i < big->digits.size(); ++i) {
-        if (carry != 0 && big->digits[i] == 0) {
+        if (carry != 0 && ptr_big[i] == 0) {
             ptr_buf[i] = max_digit;
         } else {
-            digit_type big_digit = big->digits[i] - carry;
+            digit_type big_digit = ptr_big[i] - carry;
             carry = 0;
             ptr_buf[i] = big_digit;
         }
@@ -549,12 +564,13 @@ std::pair<big_integer, big_integer> big_integer::division(big_integer const& a, 
         dividend.digits.push_back(0);
     }
     const digit_type last_digits = divisor.digits.back();
-    big_integer const& const_dividend = dividend;
+    digit_type const* ptr_dividend = dividend.digits.get_ptr();
+    digit_type const* ptr_divisor = divisor.digits.get_ptr();
     for (size_t j = m + 1; j-- > 0;) {
-        uint64_t tmp = const_dividend.digits[j + n] * base + const_dividend.digits[j + n - 1];
+        uint64_t tmp = ptr_dividend[j + n] * base + ptr_dividend[j + n - 1];
         uint64_t q = tmp / last_digits;
         uint64_t r = tmp % last_digits;
-        while (q == base || (r < base && q * divisor.digits[n - 2] > base * r + const_dividend.digits[j + n - 2])) {
+        while (q == base || (r < base && q * ptr_divisor[n - 2] > base * r + ptr_dividend[j + n - 2])) {
             --q;
             r += last_digits;
         }
@@ -570,7 +586,7 @@ std::pair<big_integer, big_integer> big_integer::division(big_integer const& a, 
     my_vector buf(n);
     digit_type* ptr_buf = buf.get_unique_ptr();
     for (size_t i = 0; i < n; ++i) {
-        ptr_buf[i] = dividend.digits[i];
+        ptr_buf[i] = ptr_dividend[i];
     }
     buf.set_size(n);
     big_integer res_mod

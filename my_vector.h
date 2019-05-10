@@ -31,6 +31,7 @@ struct my_vector {
     void push_back(elem_type elem);
     size_t size() const;
     elem_type* get_unique_ptr();
+    elem_type const* get_ptr() const;
     bool empty() const;
     void set_size(size_t new_size);
 
