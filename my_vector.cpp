@@ -61,7 +61,7 @@ my_vector::my_vector(size_t capacity, elem_type default_value) : _size(capacity)
     }
 }
 my_vector::my_vector(my_vector const& other) noexcept : _size(other._size), _capacity(other._capacity),
-                                               _is_small(other._is_small) {
+                                                        _is_small(other._is_small) {
     if (other._is_small) {
         _data = small_data;
         memcpy(_data, other._data, _small_default_capacity * sizeof(elem_type));
@@ -71,9 +71,7 @@ my_vector::my_vector(my_vector const& other) noexcept : _size(other._size), _cap
     }
 }
 
-my_vector::~my_vector() {
-
-}
+my_vector::~my_vector() = default;
 
 my_vector& my_vector::operator=(my_vector const& other) noexcept {
     if (other._is_small) {
@@ -116,7 +114,6 @@ void my_vector::pop_back() {
 void my_vector::push_back(my_vector::elem_type elem) {
     if (_is_small) {
         if (_size >= _capacity) {
-            //to do copy inplace
             make_big(_capacity <<= 1, 0);
             memcpy(_data, small_data, _small_default_capacity * sizeof(elem_type));
             _is_small = false;
@@ -148,7 +145,7 @@ bool my_vector::empty() const {
 }
 
 void my_vector::set_size(size_t new_size) {
-    _size = std::max(new_size, _size);
+    _size = new_size;
 }
 
 

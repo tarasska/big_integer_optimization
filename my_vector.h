@@ -44,9 +44,6 @@ struct my_vector {
     void make_big(size_t new_size, elem_type default_value);
     void expansion();
 
-
-
-    //std::variant<shared, elem_type[_small_default_capacity]> big_data, small_data;
     elem_type small_data[_small_default_capacity]{};
     shared big_data;
 
