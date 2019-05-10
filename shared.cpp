@@ -67,7 +67,5 @@ uint32_t* shared::get() {
 bool shared::unique() {
     return *ref_count == 1;
 }
-size_t shared::ref_cnt() const {
-    return *ref_count;
-}
+
 

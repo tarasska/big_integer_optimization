@@ -5,11 +5,9 @@
 #ifndef BIG_INTEGER_OPTIMIZATION__MY_VECTOR_H_
 #define BIG_INTEGER_OPTIMIZATION__MY_VECTOR_H_
 
-#include <cstddef>
 #include <iosfwd>
 #include <cstdint>
 #include <memory>
-#include <variant>
 #include "shared.h"
 
 struct my_vector {

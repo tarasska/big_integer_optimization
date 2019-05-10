@@ -15,7 +15,7 @@ struct shared {
     ~shared();
 
     shared& operator=(shared const& other);
-    size_t ref_cnt() const;
+
     uint32_t* get();
     bool unique();
 
