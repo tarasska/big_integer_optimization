@@ -9,14 +9,12 @@ my_vector::my_vector() : _size(0), _is_small(true) {
     _data = small_data;
     memset(small_data, 0, _small_default_capacity * sizeof(elem_type));
     _capacity = _small_default_capacity;
-    if (_data == nullptr) throw std::runtime_error("za");
 }
 
 void my_vector::make_big(size_t new_size, elem_type default_value) {
     big_data = shared(new_size);
     _data = big_data.get();
     memset(_data, default_value, new_size * sizeof(elem_type));
-    if (_data == nullptr) throw std::runtime_error("za");
 }
 
 void my_vector::make_copy() {
@@ -25,18 +23,16 @@ void my_vector::make_copy() {
     memcpy(new_data, _data, _capacity * sizeof(elem_type));
     _data = new_data;
     big_data = new_big_data;
-    if (_data == nullptr) throw std::runtime_error("za");
 }
 
 void my_vector::expansion() {
-    shared new_big_data(_capacity << 1);
+    shared new_big_data(_capacity * 2);
     elem_type* new_data = new_big_data.get();
     memcpy(new_data, _data, _size * sizeof(elem_type));
     memset(&new_data[_size], 0, (_capacity - _size) * sizeof(elem_type));
     _data = new_data;
     big_data = new_big_data;
-    if (_data == nullptr) throw std::runtime_error("za");
-    _capacity <<= 1;
+    _capacity *= 2;
 }
 
 my_vector::my_vector(size_t capacity) : _size(capacity), _capacity(capacity) {
@@ -114,7 +110,7 @@ void my_vector::pop_back() {
 void my_vector::push_back(my_vector::elem_type elem) {
     if (_is_small) {
         if (_size >= _capacity) {
-            make_big(_capacity <<= 1, 0);
+            make_big(_capacity *= 2, 0);
             memcpy(_data, small_data, _small_default_capacity * sizeof(elem_type));
             _is_small = false;
         }
